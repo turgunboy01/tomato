@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import foodRoute from "./routes/food.route.js";
 import { connectDB } from "./config/db.js";
+import userRouter from "./routes/user.route.js";
+import "dotenv/config.js";
+import cartRoute from "./routes/cart.route.js";
 
 const app = express();
 const port = 4000;
@@ -14,6 +17,8 @@ app.use("/uploads", express.static("uploads")); // Rasm yuklangan fayllarga toâ€
 
 // Asosiy marshrutlar
 app.use("/api/food", foodRoute);
+app.use("/api/user", userRouter);
+app.use("/api/cart", cartRoute);
 
 // Serverni ishga tushirish
 app.listen(port, () => {

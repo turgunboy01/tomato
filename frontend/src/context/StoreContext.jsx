@@ -1,19 +1,40 @@
 import { createContext, useEffect, useState } from "react";
-import { food_list } from "../assets/frontend_assets/assets";
+// import { food_list } from "../assets/frontend_assets/assets";
+import axios from "axios";
 
 export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
+  const [food_list, setFoodList] = useState([]);
+  const url = "http://localhost:4000";
+  const [token, setToken] = useState("");
 
-  const addCart = (itemId) => {
+  const addCart = async (itemId) => {
     if (!cartItems[itemId]) {
       setCartItems((prev) => ({ ...prev, [itemId]: 1 }));
     } else {
       setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
     }
+    if (token) {
+      await axios.post(
+        url + "/api/cart/add",
+        { itemId },
+        { headers: { token } }
+      );
+    }
   };
 
+  const removeItem = async (itemId) => {
+    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
+    if (token) {
+      await axios.post(
+        url + "/api/cart/remove",
+        { itemId },
+        { headers: { token } }
+      );
+    }
+  };
   const getTotalCartAmount = () => {
     let totalAmount = 0;
     for (const item in cartItems) {
@@ -25,9 +46,32 @@ const StoreContextProvider = (props) => {
     return totalAmount;
   };
 
-  const removeItem = (itemId) => {
-    setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
+  const loadCartData = async (token) => {
+    const response = await axios.post(
+      url + "/api/cart/get",
+      {},
+      { headers: { token } }
+    );
+    setCartItems(response.data.cartData);
   };
+
+  const fetchingFoodList = async () => {
+    const res = await axios.get(`${url}/api/food/list`);
+    setFoodList(res.data.data);
+  };
+
+  useEffect(() => {
+    async function loadData() {
+      await fetchingFoodList();
+
+      if (localStorage.getItem("token")) {
+        setToken(localStorage.getItem("token"));
+        await loadCartData(localStorage.getItem("token"));
+      }
+    }
+
+    loadData();
+  }, []);
 
   useEffect(() => {
     console.log(cartItems);
@@ -40,6 +84,9 @@ const StoreContextProvider = (props) => {
     addCart,
     removeItem,
     getTotalCartAmount,
+    url,
+    token,
+    setToken,
   };
 
   return (
